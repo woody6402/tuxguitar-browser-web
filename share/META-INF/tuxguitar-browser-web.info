@@ -1,0 +1,5 @@
+### Plugin Information ###
+plugin.name=WEB page for Collection Browser
+plugin.description=This plugin lets you import songs from Web pages in the Collection browser.
+plugin.author=Andreas Holzer
+plugin.version=0.9
