@@ -1,8 +1,7 @@
 package app.tuxguitar.app.tools.browser.web;
 
-import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
@@ -18,14 +17,21 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import app.tuxguitar.app.TuxGuitar;
 import app.tuxguitar.app.tools.browser.base.TGBrowser;
 import app.tuxguitar.app.tools.browser.base.TGBrowserElement;
+import app.tuxguitar.app.util.TGMessageDialogUtil;
+import app.tuxguitar.app.view.dialog.browser.main.TGBrowserDialog;
+import app.tuxguitar.app.view.dialog.message.TGMessageDialog;
 import app.tuxguitar.io.base.TGFileFormatManager;
 import app.tuxguitar.io.base.TGFileFormatUtils;
 import app.tuxguitar.tools.browser.base.TGBrowserCallBack;
 import app.tuxguitar.util.TGContext;
 
 public class TGBrowserImpl implements TGBrowser {
+
+	private static final int MAX_HTML_SIZE = 5 * 1024 * 1024;
+	private static final int MAX_LINK_COUNT = 10000;
 
 	/*
 	 * Web Collection Browser
@@ -88,6 +94,7 @@ public class TGBrowserImpl implements TGBrowser {
 	 */
 	private Deque<URI> history;
 	private boolean followLinks;
+	private boolean linkLimitReached;
 
 	public TGBrowserImpl(TGContext context, TGBrowserSettingsModel data) {
 		this.context = context;
@@ -235,7 +242,12 @@ public class TGBrowserImpl implements TGBrowser {
 			 * Virtual Links directory.
 			 */
 			if (this.followLinks && "__LINKS__".equals(this.currentGroup)) {
-				cb.onSuccess(createLinkElements());
+				cb.onSuccess(createLinkElements(true));
+				return;
+			}
+
+			if (this.followLinks && "__EXTERNAL_LINKS__".equals(this.currentGroup)) {
+				cb.onSuccess(createLinkElements(false));
 				return;
 			}
 
@@ -260,21 +272,36 @@ public class TGBrowserImpl implements TGBrowser {
 			result.addAll(createGroupElements());
 
 			if (this.followLinks) {
-				boolean hasLinks = false;
+				boolean hasInternalLinks = false;
+				boolean hasExternalLinks = false;
 
 				for (TGBrowserElement element : this.cachedElements) {
 					if (element.isFolder()) {
-						hasLinks = true;
-						break;
+						Boolean sameHost = ((TGBrowserElementImpl) element).isSameHost();
+
+						if (Boolean.TRUE.equals(sameHost)) {
+							hasInternalLinks = true;
+						} else if (Boolean.FALSE.equals(sameHost)) {
+							hasExternalLinks = true;
+						}
 					}
 				}
 
-				if (hasLinks) {
+				if (hasInternalLinks) {
 					result.add(new TGBrowserElementImpl("Links", null, true, "__LINKS__"));
+				}
+
+				if (hasExternalLinks) {
+					result.add(new TGBrowserElementImpl("Links extern", null, true, "__EXTERNAL_LINKS__"));
 				}
 			}
 
 			cb.onSuccess(result);
+
+			if (this.linkLimitReached) {
+				this.linkLimitReached = false;
+				showLinkLimitWarning();
+			}
 		} catch (Throwable throwable) {
 			cb.handleError(throwable);
 		}
@@ -288,6 +315,9 @@ public class TGBrowserImpl implements TGBrowser {
 
 	private List<TGBrowserElement> scanPage(URI pageUri) throws Exception {
 		String html = loadText(pageUri);
+		int linkCount = 0;
+
+		this.linkLimitReached = false;
 
 		List<TGBrowserElement> elements = new ArrayList<TGBrowserElement>();
 		Set<String> seenUrls = new HashSet<String>();
@@ -295,6 +325,11 @@ public class TGBrowserImpl implements TGBrowser {
 		Matcher matcher = LINK_PATTERN.matcher(html);
 
 		while (matcher.find()) {
+			if (++linkCount > MAX_LINK_COUNT) {
+				this.linkLimitReached = true;
+				break;
+			}
+
 			String href = firstNonNull(
 				matcher.group(1),
 				matcher.group(2),
@@ -344,11 +379,15 @@ public class TGBrowserImpl implements TGBrowser {
 			 */
 			if (isSupportedSongUrl(target)) {
 				String label = fileNameFromUri(target);
+				boolean sameHost = isSameHost(pageUri, target);
 
 				elements.add(
 					new TGBrowserElementImpl(
 						label,
-						normalizedUrl
+						normalizedUrl,
+						false,
+						null,
+						Boolean.valueOf(sameHost)
 					)
 				);
 
@@ -363,8 +402,9 @@ public class TGBrowserImpl implements TGBrowser {
 			 * Sub-pages are only collected if the user has
 			 * explicitly enabled "Follow links to sub-pages".
 			 */
-			if (this.followLinks && isBrowsablePage(pageUri, target)) {
+			if (this.followLinks && isBrowsablePage(target)) {
 				String label = cleanLabel(matcher.group(4));
+				boolean sameHost = isSameHost(pageUri, target);
 
 				/*
 				 * If visible link text is empty,
@@ -379,7 +419,8 @@ public class TGBrowserImpl implements TGBrowser {
 						label,
 						normalizedUrl,
 						true,
-						null
+						null,
+						Boolean.valueOf(sameHost)
 					)
 				);
 			}
@@ -403,7 +444,7 @@ public class TGBrowserImpl implements TGBrowser {
 						return 1;
 					}
 
-					return a.getName().compareToIgnoreCase(b.getName());
+					return getRawName(a).compareToIgnoreCase(getRawName(b));
 				}
 			}
 		);
@@ -411,7 +452,17 @@ public class TGBrowserImpl implements TGBrowser {
 		return elements;
 	}
 
-	private List<TGBrowserElement> createLinkElements() {
+	private void showLinkLimitWarning() {
+		TGMessageDialogUtil.showMessage(
+			this.context,
+			TGBrowserDialog.getInstance(this.context).getWindow(),
+			TuxGuitar.getProperty("warning"),
+			"The page contains too many links. Only the first " + MAX_LINK_COUNT + " links were scanned.",
+			TGMessageDialog.STYLE_WARNING
+		);
+	}
+
+	private List<TGBrowserElement> createLinkElements(boolean sameHost) {
 		List<TGBrowserElement> result = new ArrayList<TGBrowserElement>();
 
 		if (!this.followLinks) {
@@ -419,7 +470,8 @@ public class TGBrowserImpl implements TGBrowser {
 		}
 
 		for (TGBrowserElement element : this.cachedElements) {
-			if (element.isFolder()) {
+			if (element.isFolder()
+					&& Boolean.valueOf(sameHost).equals(((TGBrowserElementImpl) element).isSameHost())) {
 				result.add(element);
 			}
 		}
@@ -444,7 +496,7 @@ public class TGBrowserImpl implements TGBrowser {
 		 */
 		for (TGBrowserElement element : this.cachedElements) {
 			if (!element.isFolder()) {
-				groups.add(getGroup(element.getName()));
+				groups.add(getGroup(getRawName(element)));
 			}
 		}
 
@@ -457,7 +509,7 @@ public class TGBrowserImpl implements TGBrowser {
 			int count = 0;
 
 			for (TGBrowserElement element : this.cachedElements) {
-				if (!element.isFolder() && group.equals(getGroup(element.getName()))) {
+				if (!element.isFolder() && group.equals(getGroup(getRawName(element)))) {
 					count++;
 				}
 			}
@@ -481,7 +533,7 @@ public class TGBrowserImpl implements TGBrowser {
 		List<TGBrowserElement> result = new ArrayList<TGBrowserElement>();
 
 		for (TGBrowserElement element : this.cachedElements) {
-			if (!element.isFolder() && group.equals(getGroup(element.getName()))) {
+			if (!element.isFolder() && group.equals(getGroup(getRawName(element)))) {
 				result.add(element);
 			}
 		}
@@ -501,6 +553,10 @@ public class TGBrowserImpl implements TGBrowser {
 		}
 
 		return "#";
+	}
+
+	private String getRawName(TGBrowserElement element) {
+		return ((TGBrowserElementImpl) element).getRawName();
 	}
 
 	/*
@@ -553,21 +609,7 @@ public class TGBrowserImpl implements TGBrowser {
 	 * ---------------------------------------------------------
 	 */
 
-	private boolean isBrowsablePage(URI source, URI target) {
-		/*
-		 * Only browse pages on the same website.
-		 *
-		 * This prevents the collection browser from
-		 * wandering into arbitrary external websites.
-		 */
-		if (source.getHost() == null || target.getHost() == null) {
-			return false;
-		}
-
-		if (!source.getHost().equalsIgnoreCase(target.getHost())) {
-			return false;
-		}
-
+	private boolean isBrowsablePage(URI target) {
 		String path = target.getPath();
 
 		if (path == null || path.length() == 0) {
@@ -595,6 +637,12 @@ public class TGBrowserImpl implements TGBrowser {
 		}
 
 		return false;
+	}
+
+	private boolean isSameHost(URI source, URI target) {
+		return source.getHost() != null
+			&& target.getHost() != null
+			&& source.getHost().equalsIgnoreCase(target.getHost());
 	}
 
 	/*
@@ -630,24 +678,16 @@ public class TGBrowserImpl implements TGBrowser {
 		connection.setReadTimeout(30000);
 		connection.setRequestProperty("User-Agent", "TuxGuitar Web Browser");
 
-		StringBuilder result = new StringBuilder();
+		try (InputStream input = connection.getInputStream()) {
+			byte[] data = new byte[MAX_HTML_SIZE + 1];
+			int length = input.readNBytes(data, 0, data.length);
 
-		try (
-			BufferedReader reader = new BufferedReader(
-				new InputStreamReader(
-					connection.getInputStream(),
-					StandardCharsets.UTF_8
-				)
-			)
-		) {
-			String line;
-
-			while ((line = reader.readLine()) != null) {
-				result.append(line).append('\n');
+			if (length > MAX_HTML_SIZE) {
+				throw new IOException("HTML page is too large");
 			}
-		}
 
-		return result.toString();
+			return new String(data, 0, length, StandardCharsets.UTF_8);
+		}
 	}
 
 	/*

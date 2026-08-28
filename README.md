@@ -8,8 +8,10 @@ Experimental web collection browser for TuxGuitar.
 - Automatic A–Z grouping with number of pieces
 - Optional navigation to HTML sub-pages
 - Sub-page navigation is disabled by default
-- Sub-pages are collected in a separate `[Links]` folder
-- Navigation is restricted to the same host
+- Same-host and external sub-pages are separated into `Links` and `Links extern`
+- Same-host entries use `⌂`; external entries use `↗`
+- HTML downloads are limited to 5 MiB
+- Scanning is limited to 10,000 links per page; partial results remain available
 - HTML is only parsed for links – no rendering or JavaScript execution
 - Song files are opened using TuxGuitar's existing reader infrastructure
 

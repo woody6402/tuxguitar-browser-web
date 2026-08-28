@@ -8,9 +8,10 @@ public class TGBrowserElementImpl implements TGBrowserElement {
 	private String url;
 	private boolean folder;
 	private String group;
+	private Boolean sameHost;
 
 	public TGBrowserElementImpl(String name, String url) {
-		this(name, url, false, null);
+		this(name, url, false, null, null);
 	}
 
 	public TGBrowserElementImpl(
@@ -18,14 +19,32 @@ public class TGBrowserElementImpl implements TGBrowserElement {
 			String url,
 			boolean folder,
 			String group) {
+		this(name, url, folder, group, null);
+	}
+
+	public TGBrowserElementImpl(
+			String name,
+			String url,
+			boolean folder,
+			String group,
+			Boolean sameHost) {
 
 		this.name = name;
 		this.url = url;
 		this.folder = folder;
 		this.group = group;
+		this.sameHost = sameHost;
 	}
 
 	public String getName() {
+		if (this.sameHost != null) {
+			return (this.sameHost.booleanValue() ? "⌂ " : "↗ ") + this.name;
+		}
+
+		return this.name;
+	}
+
+	public String getRawName() {
 		return this.name;
 	}
 
@@ -47,5 +66,9 @@ public class TGBrowserElementImpl implements TGBrowserElement {
 
 	public String getGroup() {
 		return this.group;
+	}
+
+	public Boolean isSameHost() {
+		return this.sameHost;
 	}
 }
