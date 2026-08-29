@@ -3,16 +3,17 @@ package app.tuxguitar.app.tools.browser.web;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.net.URL;
+import java.net.URLDecoder;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Deque;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -27,6 +28,7 @@ import app.tuxguitar.io.base.TGFileFormatManager;
 import app.tuxguitar.io.base.TGFileFormatUtils;
 import app.tuxguitar.tools.browser.base.TGBrowserCallBack;
 import app.tuxguitar.util.TGContext;
+import app.tuxguitar.util.TGSynchronizer;
 
 public class TGBrowserImpl implements TGBrowser {
 
@@ -59,50 +61,30 @@ public class TGBrowserImpl implements TGBrowser {
 	 */
 
 	private static final Pattern LINK_PATTERN = Pattern.compile(
-		"<a\\b[^>]*\\bhref\\s*=\\s*(?:\"([^\"]*)\"|'([^']*)'|([^\\s>]+))[^>]*>(.*?)</a>",
+		"<a\\b[^>]*\\bhref\\s*=\\s*(?:\"([^\"]*)\"|'([^']*)'|([^\\s>]+))[^>]*>"
+			+ "((?:(?!<a\\b|</a>).)*)(?:</a>)?",
 		Pattern.CASE_INSENSITIVE | Pattern.DOTALL
 	);
 
 	private static final Pattern TAG_PATTERN = Pattern.compile("<[^>]+>");
+	private static final Pattern CONTENT_DISPOSITION_FILENAME_PATTERN = Pattern.compile(
+		"(?:^|;)\\s*filename\\s*=\\s*(?:\"([^\"]*)\"|([^;]*))",
+		Pattern.CASE_INSENSITIVE
+	);
 
 	private TGContext context;
 	private TGBrowserSettingsModel data;
 
-	private URI rootUri;
-	private URI currentUri;
-
-	/*
-	 * Current virtual A-Z folder.
-	 *
-	 * null means that we are directly on currentUri.
-	 */
-	private String currentGroup;
-
-	/*
-	 * Contents of currentUri.
-	 *
-	 * Contains:
-	 * - song files
-	 * - optionally real web folders
-	 */
-	private List<TGBrowserElement> cachedElements;
-
-	/*
-	 * Navigation history for real HTML pages.
-	 *
-	 * A-Z navigation does NOT use this stack.
-	 */
-	private Deque<URI> history;
+	private TGWebBrowserNavigation navigation;
 	private boolean followLinks;
+	private TGSongLinkPattern songLinkPattern;
 	private boolean linkLimitReached;
 
 	public TGBrowserImpl(TGContext context, TGBrowserSettingsModel data) {
 		this.context = context;
 		this.data = data;
 
-		this.currentGroup = null;
-		this.cachedElements = null;
-		this.history = new ArrayDeque<URI>();
+		this.navigation = new TGWebBrowserNavigation();
 	}
 
 	/*
@@ -119,13 +101,20 @@ public class TGBrowserImpl implements TGBrowser {
 		  url = url.replace("?followLinks=true", "");
 		  url = url.replace("&followLinks=true", "");
 
-		  this.rootUri = normalizeRoot(url);
-		  this.currentUri = this.rootUri;
+		  this.songLinkPattern = null;
+		  int patternIndex = url.indexOf("tgSongPattern=");
+		  if (patternIndex >= 0) {
+			  int valueStart = patternIndex + "tgSongPattern=".length();
+			  int valueEnd = url.indexOf('&', valueStart);
+			  String encodedPattern = url.substring(valueStart, valueEnd >= 0 ? valueEnd : url.length());
+			  this.songLinkPattern = TGSongLinkPattern.compile(URLDecoder.decode(encodedPattern, "UTF-8"));
+			  int optionStart = patternIndex > 0 && (url.charAt(patternIndex - 1) == '?' || url.charAt(patternIndex - 1) == '&')
+				  ? patternIndex - 1 : patternIndex;
+			  url = url.substring(0, optionStart) + (valueEnd >= 0 ? url.substring(valueEnd) : "");
+		  }
 
-		  this.currentGroup = null;
-		  this.cachedElements = null;
-
-		  this.history.clear();
+		  this.navigation.open(normalizeRoot(url));
+		  updateWindowTitle();
 
 		  cb.onSuccess(null);
 	  } catch (Throwable throwable) {
@@ -134,11 +123,8 @@ public class TGBrowserImpl implements TGBrowser {
   }
 
 	public void close(TGBrowserCallBack<Object> cb) {
-		this.currentUri = null;
-		this.currentGroup = null;
-		this.cachedElements = null;
-
-		this.history.clear();
+		this.navigation.close();
+		restoreWindowTitle();
 
 		cb.onSuccess(null);
 	}
@@ -150,11 +136,8 @@ public class TGBrowserImpl implements TGBrowser {
 	 */
 
 	public void cdRoot(TGBrowserCallBack<Object> cb) {
-		this.currentUri = this.rootUri;
-		this.currentGroup = null;
-		this.cachedElements = null;
-
-		this.history.clear();
+		this.navigation.goRoot();
+		updateWindowTitle();
 
 		cb.onSuccess(null);
 	}
@@ -171,19 +154,8 @@ public class TGBrowserImpl implements TGBrowser {
 		 *
 		 * "Up" from S only returns to the Sor page.
 		 */
-		if (this.currentGroup != null) {
-			this.currentGroup = null;
-			cb.onSuccess(null);
-			return;
-		}
-
-		/*
-		 * Otherwise leave the current real HTML page.
-		 */
-		if (!this.history.isEmpty()) {
-			this.currentUri = this.history.pop();
-			this.cachedElements = null;
-		}
+		this.navigation.goUp();
+		updateWindowTitle();
 
 		cb.onSuccess(null);
 	}
@@ -197,7 +169,7 @@ public class TGBrowserImpl implements TGBrowser {
 				 * Virtual A-Z folder.
 				 */
 				if (webElement.getGroup() != null) {
-					this.currentGroup = webElement.getGroup();
+					this.navigation.enterVirtualFolder(webElement.getGroup(), webElement.getFilePrefix());
 				}
 
 				/*
@@ -209,13 +181,10 @@ public class TGBrowserImpl implements TGBrowser {
 				else if (this.followLinks && webElement.getUrl() != null) {
 					URI nextUri = URI.create(webElement.getUrl());
 
-					this.history.push(this.currentUri);
-					this.currentUri = nextUri;
-
-					this.currentGroup = null;
-					this.cachedElements = null;
+					this.navigation.enterPage(nextUri, collectCurrentPageLinks());
 				}
 			}
+			updateWindowTitle();
 
 			cb.onSuccess(null);
 		} catch (Throwable throwable) {
@@ -234,19 +203,19 @@ public class TGBrowserImpl implements TGBrowser {
 			/*
 			 * Scan current HTML page only once.
 			 */
-			if (this.cachedElements == null) {
-				this.cachedElements = scanPage(this.currentUri);
+			if (this.navigation.getCachedElements() == null) {
+				this.navigation.setCachedElements(scanPage(this.navigation.getCurrentUri()));
 			}
 
 			/*
 			 * Virtual Links directory.
 			 */
-			if (this.followLinks && "__LINKS__".equals(this.currentGroup)) {
+			if (this.followLinks && "__LINKS__".equals(this.navigation.getCurrentGroup())) {
 				cb.onSuccess(createLinkElements(true));
 				return;
 			}
 
-			if (this.followLinks && "__EXTERNAL_LINKS__".equals(this.currentGroup)) {
+			if (this.followLinks && "__EXTERNAL_LINKS__".equals(this.navigation.getCurrentGroup())) {
 				cb.onSuccess(createLinkElements(false));
 				return;
 			}
@@ -254,8 +223,10 @@ public class TGBrowserImpl implements TGBrowser {
 			/*
 			 * Virtual A-Z directory.
 			 */
-			if (this.currentGroup != null) {
-				cb.onSuccess(createFileElements(this.currentGroup));
+			if (this.navigation.getCurrentGroup() != null) {
+				cb.onSuccess(this.navigation.getCurrentFilePrefix() != null
+					? createPrefixFileElements(this.navigation.getCurrentGroup(), this.navigation.getCurrentFilePrefix())
+					: createFileElements(this.navigation.getCurrentGroup()));
 				return;
 			}
 
@@ -272,23 +243,18 @@ public class TGBrowserImpl implements TGBrowser {
 			result.addAll(createGroupElements());
 
 			if (this.followLinks) {
-				boolean hasInternalLinks = false;
 				boolean hasExternalLinks = false;
 
-				for (TGBrowserElement element : this.cachedElements) {
+				for (TGBrowserElement element : this.navigation.getCachedElements()) {
 					if (element.isFolder()) {
 						Boolean sameHost = ((TGBrowserElementImpl) element).isSameHost();
 
 						if (Boolean.TRUE.equals(sameHost)) {
-							hasInternalLinks = true;
+							result.add(element);
 						} else if (Boolean.FALSE.equals(sameHost)) {
 							hasExternalLinks = true;
 						}
 					}
-				}
-
-				if (hasInternalLinks) {
-					result.add(new TGBrowserElementImpl("Links", null, true, "__LINKS__"));
 				}
 
 				if (hasExternalLinks) {
@@ -377,8 +343,15 @@ public class TGBrowserImpl implements TGBrowser {
 			 * Song file
 			 * -------------------------------------------------
 			 */
-			if (isSupportedSongUrl(target)) {
-				String label = fileNameFromUri(target);
+			TGSongLinkMatch songLinkMatch = matchSongLinkPattern(normalizedUrl);
+			if (isSupportedSongUrl(target) || songLinkMatch.matches()) {
+				String label = isSupportedSongUrl(target) ? fileNameFromUri(target) : songLinkMatch.getDisplayName();
+				if (label.length() == 0) {
+					label = cleanLabel(matcher.group(4));
+				}
+				if (label.length() == 0) {
+					label = pageNameFromUri(target);
+				}
 				boolean sameHost = isSameHost(pageUri, target);
 
 				elements.add(
@@ -402,7 +375,17 @@ public class TGBrowserImpl implements TGBrowser {
 			 * Sub-pages are only collected if the user has
 			 * explicitly enabled "Follow links to sub-pages".
 			 */
-			if (this.followLinks && isBrowsablePage(target)) {
+			if (this.followLinks && isBrowsablePage(pageUri, target)) {
+				/*
+				 * Global navigation is commonly repeated on every page. Once a
+				 * page link was already present on an ancestor, do not expose it
+				 * again on the child page. Song files above deliberately bypass
+				 * this filter.
+				 */
+				if (this.navigation.isInheritedPageLink(normalizedUrl)) {
+					continue;
+				}
+
 				String label = cleanLabel(matcher.group(4));
 				boolean sameHost = isSameHost(pageUri, target);
 
@@ -452,6 +435,23 @@ public class TGBrowserImpl implements TGBrowser {
 		return elements;
 	}
 
+	private Set<String> collectCurrentPageLinks() {
+		Set<String> result = new HashSet<String>();
+
+		if (this.navigation.getCachedElements() != null) {
+			for (TGBrowserElement element : this.navigation.getCachedElements()) {
+				if (element.isFolder()) {
+					String url = ((TGBrowserElementImpl) element).getUrl();
+					if (url != null) {
+						result.add(url);
+					}
+				}
+			}
+		}
+
+		return result;
+	}
+
 	private void showLinkLimitWarning() {
 		TGMessageDialogUtil.showMessage(
 			this.context,
@@ -469,7 +469,7 @@ public class TGBrowserImpl implements TGBrowser {
 			return result;
 		}
 
-		for (TGBrowserElement element : this.cachedElements) {
+		for (TGBrowserElement element : this.navigation.getCachedElements()) {
 			if (element.isFolder()
 					&& Boolean.valueOf(sameHost).equals(((TGBrowserElementImpl) element).isSameHost())) {
 				result.add(element);
@@ -494,7 +494,7 @@ public class TGBrowserImpl implements TGBrowser {
 		 * only files are grouped.
 		 * Real HTML folders do not create A-Z groups.
 		 */
-		for (TGBrowserElement element : this.cachedElements) {
+		for (TGBrowserElement element : this.navigation.getCachedElements()) {
 			if (!element.isFolder()) {
 				groups.add(getGroup(getRawName(element)));
 			}
@@ -508,7 +508,7 @@ public class TGBrowserImpl implements TGBrowser {
 		for (String group : sortedGroups) {
 			int count = 0;
 
-			for (TGBrowserElement element : this.cachedElements) {
+			for (TGBrowserElement element : this.navigation.getCachedElements()) {
 				if (!element.isFolder() && group.equals(getGroup(getRawName(element)))) {
 					count++;
 				}
@@ -531,14 +531,80 @@ public class TGBrowserImpl implements TGBrowser {
 
 	private List<TGBrowserElement> createFileElements(String group) {
 		List<TGBrowserElement> result = new ArrayList<TGBrowserElement>();
+		Map<String, Integer> prefixCounts = new HashMap<String, Integer>();
+		Map<String, String> prefixLabels = new HashMap<String, String>();
 
-		for (TGBrowserElement element : this.cachedElements) {
+		for (TGBrowserElement element : this.navigation.getCachedElements()) {
 			if (!element.isFolder() && group.equals(getGroup(getRawName(element)))) {
+				String prefix = getFilePrefix(getRawName(element));
+				if (prefix != null) {
+					String key = prefix.toLowerCase(Locale.ROOT);
+					Integer count = prefixCounts.get(key);
+					prefixCounts.put(key, Integer.valueOf(count != null ? count.intValue() + 1 : 1));
+					if (!prefixLabels.containsKey(key)) {
+						prefixLabels.put(key, prefix);
+					}
+				}
+			}
+		}
+
+		List<String> groupedPrefixes = new ArrayList<String>();
+		for (Map.Entry<String, Integer> entry : prefixCounts.entrySet()) {
+			if (entry.getValue().intValue() >= 2) {
+				groupedPrefixes.add(entry.getKey());
+			}
+		}
+		Collections.sort(groupedPrefixes, String.CASE_INSENSITIVE_ORDER);
+
+		for (String prefix : groupedPrefixes) {
+			result.add(new TGBrowserElementImpl(
+				prefixLabels.get(prefix) + " (" + prefixCounts.get(prefix) + ")",
+				true,
+				group,
+				prefix));
+		}
+
+		for (TGBrowserElement element : this.navigation.getCachedElements()) {
+			if (!element.isFolder() && group.equals(getGroup(getRawName(element)))) {
+				String prefix = getFilePrefix(getRawName(element));
+				String key = (prefix != null ? prefix.toLowerCase(Locale.ROOT) : null);
+				if (key == null || !groupedPrefixes.contains(key)) {
+					result.add(element);
+				}
+			}
+		}
+
+		return result;
+	}
+
+	private List<TGBrowserElement> createPrefixFileElements(String group, String prefix) {
+		List<TGBrowserElement> result = new ArrayList<TGBrowserElement>();
+
+		for (TGBrowserElement element : this.navigation.getCachedElements()) {
+			String elementPrefix = getFilePrefix(getRawName(element));
+			if (!element.isFolder()
+					&& group.equals(getGroup(getRawName(element)))
+					&& elementPrefix != null
+					&& prefix.equals(elementPrefix.toLowerCase(Locale.ROOT))) {
 				result.add(element);
 			}
 		}
 
 		return result;
+	}
+
+	private String getFilePrefix(String name) {
+		if (name == null) {
+			return null;
+		}
+
+		int separator = name.indexOf('_');
+		if (separator <= 0 || separator > 40) {
+			return null;
+		}
+
+		String prefix = name.substring(0, separator).trim();
+		return (prefix.length() > 0 ? prefix : null);
 	}
 
 	private String getGroup(String name) {
@@ -568,9 +634,23 @@ public class TGBrowserImpl implements TGBrowser {
 	public void getInputStream(TGBrowserCallBack<InputStream> cb, TGBrowserElement element) {
 		try {
 			TGBrowserElementImpl webElement = (TGBrowserElementImpl) element;
-			URL url = URI.create(webElement.getUrl()).toURL();
+			URI targetUri = URI.create(webElement.getUrl());
+			URLConnection connection = targetUri.toURL().openConnection();
 
-			InputStream stream = TGFileFormatUtils.getInputStream(url.openStream());
+			connection.setConnectTimeout(10000);
+			connection.setReadTimeout(30000);
+			connection.setRequestProperty("User-Agent", "TuxGuitar Web Browser");
+
+			if (isSameHost(this.navigation.getCurrentUri(), targetUri)) {
+				connection.setRequestProperty("Referer", this.navigation.getCurrentUri().toString());
+			}
+
+			InputStream responseStream = connection.getInputStream();
+			String responseFileName = getResponseFileName(connection);
+			if (responseFileName != null) {
+				webElement.setName(responseFileName);
+			}
+			InputStream stream = TGFileFormatUtils.getInputStream(responseStream);
 
 			cb.onSuccess(stream);
 		} catch (Throwable throwable) {
@@ -609,7 +689,7 @@ public class TGBrowserImpl implements TGBrowser {
 	 * ---------------------------------------------------------
 	 */
 
-	private boolean isBrowsablePage(URI target) {
+	private boolean isBrowsablePage(URI source, URI target) {
 		String path = target.getPath();
 
 		if (path == null || path.length() == 0) {
@@ -633,6 +713,24 @@ public class TGBrowserImpl implements TGBrowser {
 		 * https://site.example/sor/
 		 */
 		if (lower.endsWith("/")) {
+			return true;
+		}
+
+		/*
+		 * Modern sites commonly use extensionless routes.
+		 *
+		 * Example:
+		 *
+		 * https://site.example/en/tabs/artist
+		 *
+		 * Only accept these routes on the same host. This prevents an
+		 * extensionless external download or service URL from being exposed as
+		 * a normal web folder.
+		 */
+		int slash = path.lastIndexOf('/');
+		String name = (slash >= 0 ? path.substring(slash + 1) : path);
+
+		if (name.length() > 0 && name.indexOf('.') < 0 && isSameHost(source, target)) {
 			return true;
 		}
 
@@ -709,6 +807,12 @@ public class TGBrowserImpl implements TGBrowser {
 		);
 	}
 
+	private TGSongLinkMatch matchSongLinkPattern(String url) {
+		return this.songLinkPattern != null
+			? this.songLinkPattern.match(url)
+			: TGSongLinkMatch.NO_MATCH;
+	}
+
 	private boolean isHttpUrl(URI uri) {
 		if (uri == null || uri.getScheme() == null) {
 			return false;
@@ -716,6 +820,84 @@ public class TGBrowserImpl implements TGBrowser {
 
 		return "http".equalsIgnoreCase(uri.getScheme())
 			|| "https".equalsIgnoreCase(uri.getScheme());
+	}
+
+	private String getResponseFileName(URLConnection connection) {
+		String disposition = connection.getHeaderField("Content-Disposition");
+		if (disposition == null) {
+			return null;
+		}
+
+		Matcher matcher = CONTENT_DISPOSITION_FILENAME_PATTERN.matcher(disposition);
+		if (!matcher.find()) {
+			return null;
+		}
+
+		String name = firstNonNull(matcher.group(1), matcher.group(2));
+		if (name == null) {
+			return null;
+		}
+
+		name = name.trim();
+		name = name.replace('\\', '/');
+		int slash = name.lastIndexOf('/');
+		if (slash >= 0) {
+			name = name.substring(slash + 1);
+		}
+
+		return (name.length() > 0 ? name : null);
+	}
+
+	/*
+	 * ---------------------------------------------------------
+	 * Location display
+	 * ---------------------------------------------------------
+	 */
+
+	private void updateWindowTitle() {
+		final URI uri = this.navigation.getCurrentUri();
+		final String group = this.navigation.getCurrentGroup();
+		final String prefix = this.navigation.getCurrentFilePrefix();
+
+		TGSynchronizer.getInstance(this.context).executeLater(new Runnable() {
+			public void run() {
+				TGBrowserDialog browser = TGBrowserDialog.getInstance(TGBrowserImpl.this.context);
+				if (!browser.isDisposed()) {
+					StringBuilder title = new StringBuilder(TuxGuitar.getProperty("browser.dialog"));
+					if (uri != null) {
+						title.append(" - ").append(uri.toString());
+					}
+					if (group != null) {
+						title.append(" - ").append(displayGroup(group));
+					}
+					if (prefix != null) {
+						title.append(" - ").append(prefix);
+					}
+					browser.getWindow().setText(title.toString());
+				}
+			}
+		});
+	}
+
+	private void restoreWindowTitle() {
+		TGSynchronizer.getInstance(this.context).executeLater(new Runnable() {
+			public void run() {
+				TGBrowserDialog browser = TGBrowserDialog.getInstance(TGBrowserImpl.this.context);
+				if (!browser.isDisposed()) {
+					browser.getWindow().setText(TuxGuitar.getProperty("browser.dialog"));
+				}
+			}
+		});
+	}
+
+	private String displayGroup(String group) {
+		if ("__LINKS__".equals(group)) {
+			return "Links";
+		}
+		if ("__EXTERNAL_LINKS__".equals(group)) {
+			return "Links extern";
+		}
+		return group;
 	}
 
 	/*

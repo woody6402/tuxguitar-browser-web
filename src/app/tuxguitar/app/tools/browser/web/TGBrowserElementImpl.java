@@ -9,6 +9,7 @@ public class TGBrowserElementImpl implements TGBrowserElement {
 	private boolean folder;
 	private String group;
 	private Boolean sameHost;
+	private String filePrefix;
 
 	public TGBrowserElementImpl(String name, String url) {
 		this(name, url, false, null, null);
@@ -34,6 +35,16 @@ public class TGBrowserElementImpl implements TGBrowserElement {
 		this.folder = folder;
 		this.group = group;
 		this.sameHost = sameHost;
+		this.filePrefix = null;
+	}
+
+	public TGBrowserElementImpl(
+			String name,
+			boolean folder,
+			String group,
+			String filePrefix) {
+		this(name, null, folder, group, null);
+		this.filePrefix = filePrefix;
 	}
 
 	public String getName() {
@@ -46,6 +57,10 @@ public class TGBrowserElementImpl implements TGBrowserElement {
 
 	public String getRawName() {
 		return this.name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
 	}
 
 	public String getPath() {
@@ -70,5 +85,9 @@ public class TGBrowserElementImpl implements TGBrowserElement {
 
 	public Boolean isSameHost() {
 		return this.sameHost;
+	}
+
+	public String getFilePrefix() {
+		return this.filePrefix;
 	}
 }
