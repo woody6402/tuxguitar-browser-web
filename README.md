@@ -11,6 +11,21 @@ downloads on sites that do not expose a normal filename. Ready-made site presets
 loaded from an editable JSON file, so sources can be added or corrected without
 recompiling the plugin.
 
+## Screenshots
+
+Choose a ready-made preset or enter the address and link rules for another site:
+
+![Web browser preset configuration](docs/images/preset-configuration.png)
+
+Detected files are grouped alphabetically to keep large collections manageable:
+
+![Collection browser with A-Z groups](docs/images/collection-a-z.png)
+
+Where the source provides useful names, another level groups the files by composer,
+artist, or filename prefix and shows the number of matching pieces:
+
+![Collection browser with composer groups](docs/images/collection-composers.png)
+
 ## Features
 
 - Browse TuxGuitar-supported song files directly from web pages
