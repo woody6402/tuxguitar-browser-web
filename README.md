@@ -1,6 +1,15 @@
 # TuxGuitar Web Browser
 
-Experimental web collection browser for TuxGuitar.
+This plugin makes downloadable tablature and song files on a website available as a
+collection in TuxGuitar. Give it a web address and it scans the page for formats that
+TuxGuitar can open, such as Guitar Pro, Power Tab, TablEdit, and MIDI. The detected
+files are organized into a navigable list and can be opened directly in TuxGuitar.
+
+For sites whose files are spread across several pages, the plugin can also follow
+links and build a simple folder-like navigation. Optional link patterns help identify
+downloads on sites that do not expose a normal filename. Ready-made site presets are
+loaded from an editable JSON file, so sources can be added or corrected without
+recompiling the plugin.
 
 ## Features
 
