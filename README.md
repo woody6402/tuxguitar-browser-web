@@ -29,6 +29,7 @@ artist, or filename prefix and shows the number of matching pieces:
 ## Features
 
 - Browse TuxGuitar-supported song files directly from web pages
+- Search all song files detected on the current web page without opening the virtual A-Z folders
 - Automatic A–Z grouping with number of pieces
 - Optional navigation to HTML sub-pages
 - Sub-page navigation is disabled by default

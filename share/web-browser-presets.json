@@ -1,182 +1,182 @@
 [
   {
     "name": "MidKar Jazz MIDI",
-    "description": "Großes Jazzarchiv mit 778 MIDI-Dateien: Swing, Bebop, Bossa Nova, Big Band und sehr viele Standards des Great American Songbook.",
+    "description": "Large jazz archive with 778 MIDI files covering swing, bebop, bossa nova, big band, and many Great American Songbook standards.",
     "url": "https://midkar.com/Jazz/Jazz.html",
     "followLinks": true,
     "songPattern": ""
   },
   {
     "name": "Les Gorven Jazz Standards",
-    "description": "Direkt zugängliche MIDI-Arrangements klassischer Jazz- und Songbook-Titel wie A Fine Romance, A Foggy Day, Ain't Misbehavin' und All the Things You Are.",
+    "description": "Directly accessible MIDI arrangements of classic jazz and Songbook titles such as A Fine Romance, A Foggy Day, Ain't Misbehavin', and All the Things You Are.",
     "url": "https://midkar.com/LES_GORVEN_STUDIO/Les_Gorven_B2M/B2M_Jazz_Songs.html",
     "followLinks": false,
     "songPattern": ""
   },
   {
     "name": "Josef Huber Jazz MIDI",
-    "description": "Persönliche MIDI-Sammlung mit Jazzstandards, Broadway- und Songbook-Stücken, darunter Body and Soul, I Got Rhythm, My Funny Valentine und Take the A Train.",
+    "description": "Personal MIDI collection of jazz standards, Broadway songs, and Songbook pieces, including Body and Soul, I Got Rhythm, My Funny Valentine, and Take the A Train.",
     "url": "https://josefhuber.com/index.php/my-files",
     "followLinks": false,
     "songPattern": ""
   },
   {
     "name": "bTd Big Band MIDI",
-    "description": "Kompakte Big-Band- und Swing-Sammlung mit Glenn-Miller-Titeln, Ellington, Tommy Dorsey sowie weiteren bekannten Standards.",
+    "description": "Compact big-band and swing collection featuring Glenn Miller, Ellington, Tommy Dorsey, and other well-known standards.",
     "url": "https://www.dongrays.com/midi/archive/jazz/bigband/",
     "followLinks": false,
     "songPattern": ""
   },
   {
     "name": "bTd Ragtime & Standards MIDI",
-    "description": "Kleine direkte MIDI-Sammlung zwischen Ragtime, frühem Swing und Standards, unter anderem Anything Goes, Cherokee, Sweet Georgia Brown und Bye Bye Blues.",
+    "description": "Small direct MIDI collection spanning ragtime, early swing, and standards such as Anything Goes, Cherokee, Sweet Georgia Brown, and Bye Bye Blues.",
     "url": "https://www.dongrays.com/midi/archive/jazz/rag/",
     "followLinks": false,
     "songPattern": ""
   },
   {
     "name": "Hotclub Powertab",
-    "description": "Gypsy-Jazz-, Swing- und Hot-Club-Arrangements als direkt ladbare PowerTab-Dateien.",
+    "description": "Gypsy jazz, swing, and Hot Club arrangements available as directly downloadable PowerTab files.",
     "url": "https://hotclub.co.uk/ptab/powertab.html",
     "followLinks": true,
     "songPattern": ""
   },
   {
     "name": "Guitar Jazz Tabs PTB",
-    "description": "Eine kleine Auswahl ausgearbeiteter Jazz- und Popstandards für Gitarre als PowerTab-Dateien.",
+    "description": "A small selection of fully arranged jazz and pop standards for guitar in PowerTab format.",
     "url": "https://www.guitarjazztabs.com/",
     "followLinks": false,
     "songPattern": ""
   },
   {
     "name": "Jass and Chansons",
-    "description": "Jazzstandards und Chansons für Gitarre; die Sammlung enthält MIDI-, PowerTab- und Guitar-Pro-Dateien.",
+    "description": "Jazz standards and chansons for guitar, with MIDI, PowerTab, and Guitar Pro files.",
     "url": "http://jazz.chansons.free.fr/guitarejazz2.htm",
     "followLinks": true,
     "songPattern": ""
   },
   {
     "name": "Classical Midi",
-    "description": "Klassische Gitarrenmusik als MIDI, geordnet nach Komponisten und mit vielen historischen Werken.",
+    "description": "Classical guitar music in MIDI format, organized by composer and featuring many historical works.",
     "url": "https://www.classicalguitarmidi.com/",
     "followLinks": true,
     "songPattern": ""
   },
   {
     "name": "Classtab WEB FL",
-    "description": "Klassische Gitarrenstücke und Übungen, überwiegend als MIDI und ASCII-Tabulatur, nach Komponisten gegliedert.",
+    "description": "Classical guitar pieces and exercises, mainly as MIDI and ASCII tablature, organized by composer.",
     "url": "https://www.classtab.org/index_old.htm",
     "followLinks": true,
     "songPattern": ""
   },
   {
     "name": "Onefish Classical MIDI",
-    "description": "Kleine klassische MIDI-Sammlung mit mehrsätzigen Werken von Johann Sebastian Bach.",
+    "description": "Small classical MIDI collection featuring multi-movement works by Johann Sebastian Bach.",
     "url": "https://onefish.dev/classical/",
     "followLinks": false,
     "songPattern": ""
   },
   {
     "name": "Acoustic Fingerstyle",
-    "description": "Fingerstyle-Arrangements für akustische Gitarre als MIDI-Dateien aus verschiedenen Stilrichtungen.",
+    "description": "Fingerstyle arrangements for acoustic guitar as MIDI files across a variety of styles.",
     "url": "https://www.acousticfingerstyle.com/midifils.htm",
     "followLinks": true,
     "songPattern": ""
   },
   {
     "name": "Tallstrom Fingerstyle GP5",
-    "description": "Rund 40 direkt ladbare Fingerstyle-Arrangements und Eigenkompositionen als Guitar Pro 5, mit Chet-Atkins-Einflüssen, Country Picking, Open Tunings und bekannten Melodien.",
+    "description": "Around 40 directly downloadable fingerstyle arrangements and original compositions in Guitar Pro 5 format, with Chet Atkins influences, country picking, open tunings, and familiar melodies.",
     "url": "https://tallstrom.com/free-tabs",
     "followLinks": false,
     "songPattern": ""
   },
   {
     "name": "GPA Chet Atkins Fingerstyle TEF",
-    "description": "Umfangreiche Chet-Atkins-Sammlung mit über 120 direkt ladbaren TablEdit-Dateien: Country Fingerpicking, Jazzstandards, Ragtime und bekannte Arrangements.",
+    "description": "Extensive Chet Atkins collection with more than 120 directly downloadable TablEdit files, including country fingerpicking, jazz standards, ragtime, and familiar arrangements.",
     "url": "https://www.gpassociation.com/en/partitions/tabs_atkins.php",
     "followLinks": false,
     "songPattern": ""
   },
   {
     "name": "Duane Langston Fingerstyle TEF",
-    "description": "Mehr als 350 persönliche Fingerstyle-Gitarrenarrangements als TablEdit, darunter Jazz- und Songbook-Standards, Folk, Filmmusik und populäre Melodien.",
+    "description": "More than 350 personal fingerstyle guitar arrangements in TablEdit format, including jazz and Songbook standards, folk, film music, and popular melodies.",
     "url": "http://duanelangston.myartsonline.com/guitar_songs.html",
     "followLinks": false,
     "songPattern": ""
   },
   {
     "name": "AcousticPower",
-    "description": "Akustikgitarren-Arrangements als PowerTab, darunter Fingerstyle, Klassik, Blues und Stücke von Chet Atkins.",
+    "description": "Acoustic guitar arrangements in PowerTab format, including fingerstyle, classical, blues, and pieces by Chet Atkins.",
     "url": "https://acousticpower.com/",
     "followLinks": true,
     "songPattern": ""
   },
   {
     "name": "Steve McWilliam TEF & MIDI",
-    "description": "Eine große gemischte Gitarrensammlung mit Ragtime, Folk, Klassik und populären Stücken, jeweils als TEF und MIDI.",
+    "description": "Large mixed guitar collection covering ragtime, folk, classical, and popular pieces, provided in both TEF and MIDI formats.",
     "url": "https://stevemcwilliam.co.uk/guitar/tab.htm",
     "followLinks": false,
     "songPattern": ""
   },
   {
     "name": "Martin Blake TEF",
-    "description": "Flatpicking-, Folk-, Blues- und traditionelle Gitarrenarrangements als direkt ladbare TablEdit-Dateien.",
+    "description": "Flatpicking, folk, blues, and traditional guitar arrangements available as directly downloadable TablEdit files.",
     "url": "https://www.martinblake.co.uk/tab.html",
     "followLinks": false,
     "songPattern": ""
   },
   {
     "name": "Mandozine Mandolin TEF",
-    "description": "Knapp 3.000 Mandolinen-Tabulaturen als TEF: Bluegrass, Celtic, Jazz, Old-Time, Klassik, Walzer und weitere Stile.",
+    "description": "Nearly 3,000 mandolin tablatures in TEF format, covering bluegrass, Celtic, jazz, old-time, classical, waltzes, and other styles.",
     "url": "https://mandozine.com/music/search_results.php?searchfor=&tuneselectby=C&mandolevel=0&category=&songkey=&artist=&transcriber=&sortby=T&sortorder=A&submit=",
     "followLinks": false,
     "songPattern": ""
   },
   {
     "name": "Banjr TEF & MIDI",
-    "description": "Sehr große Sammlung amerikanischer Fiddle-Tunes für Five-String-Banjo, meist paarweise als TablEdit und MIDI.",
+    "description": "Very large collection of American fiddle tunes for five-string banjo, mostly provided as matching TablEdit and MIDI files.",
     "url": "https://banjr.com/tablatures.htm",
     "followLinks": false,
     "songPattern": ""
   },
   {
     "name": "Banjo Hangout",
-    "description": "Großes Banjo-Archiv mit Bluegrass, Clawhammer, Old-Time, Folk und Klassik; viele Einträge enthalten TEF oder MIDI.",
+    "description": "Large banjo archive covering bluegrass, clawhammer, old-time, folk, and classical music, with many entries available as TEF or MIDI files.",
     "url": "https://www.banjohangout.org/tab/",
     "followLinks": true,
     "songPattern": ""
   },
   {
     "name": "BanjoBluegrass.fr TEF",
-    "description": "Alphabetisch gegliederte Five-String-Banjo-Sammlung mit Bluegrass-, Folk- und traditionellen Stücken als TEF.",
+    "description": "Alphabetically organized five-string banjo collection with bluegrass, folk, and traditional pieces in TEF format.",
     "url": "http://banjobluegrass.free.fr/Banjo_tabs_A.html",
     "followLinks": true,
     "songPattern": ""
   },
   {
     "name": "Strum Hollow TEF",
-    "description": "Old-Time- und Fiddle-Tunes als TEF-Arrangements für Banjo, Dobro, Dulcimer, Fiddle, Gitarre und Mandoline.",
+    "description": "Old-time and fiddle tunes as TEF arrangements for banjo, dobro, dulcimer, fiddle, guitar, and mandolin.",
     "url": "https://strumhollow.com/pages/free-tablature-for-banjo-dobro-dulcimer-fiddle-guitar-mandolin",
     "followLinks": false,
     "songPattern": ""
   },
   {
     "name": "Dulcimertab TEF & MIDI",
-    "description": "Umfangreicher Mountain-Dulcimer-Katalog mit Folk, Hymnen, traditionellen Liedern und Standards als TEF und MIDI.",
+    "description": "Extensive mountain dulcimer catalog featuring folk songs, hymns, traditional tunes, and standards in TEF and MIDI formats.",
     "url": "https://dulcimertab.com/click-here-for-tablature-list/",
     "followLinks": false,
     "songPattern": ""
   },
   {
     "name": "GuitarProTabs.org",
-    "description": "Großes, nach Interpret und Titel gegliedertes Archiv populärer Songs in verschiedenen Guitar-Pro-Formaten.",
+    "description": "Large archive of popular songs in various Guitar Pro formats, organized by artist and title.",
     "url": "https://guitarprotabs.org/",
     "followLinks": true,
     "songPattern": "*/{*}/{*}/download/"
   },
   {
     "name": "GProTab",
-    "description": "Durchsuchbarer Online-Katalog populärer Guitar-Pro-Tabulaturen mit Vorschau und dateibasiertem Download.",
+    "description": "Searchable online catalog of popular Guitar Pro tablatures with previews and file-based downloads.",
     "url": "https://gprotab.net/",
     "followLinks": true,
     "songPattern": "*/{*}/{*}?download"

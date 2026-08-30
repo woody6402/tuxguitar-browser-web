@@ -273,6 +273,42 @@ public class TGBrowserImpl implements TGBrowser {
 		}
 	}
 
+	public void searchElements(TGBrowserCallBack<List<TGBrowserElement>> cb, String query) {
+		try {
+			if (this.navigation.getCachedElements() == null) {
+				this.navigation.setCachedElements(scanPage(this.navigation.getCurrentUri()));
+			}
+
+			String normalizedQuery = normalizeSearchText(query);
+			List<TGBrowserElement> result = new ArrayList<TGBrowserElement>();
+			for (TGBrowserElement element : this.navigation.getCachedElements()) {
+				if (!element.isFolder() && matchesSearch(getRawName(element), normalizedQuery)) {
+					result.add(element);
+				}
+			}
+			cb.onSuccess(result);
+		} catch (Throwable throwable) {
+			cb.handleError(throwable);
+		}
+	}
+
+	private boolean matchesSearch(String name, String query) {
+		String value = normalizeSearchText(name);
+		for (String token : query.split("\\s+")) {
+			if (token.length() > 0 && !value.contains(token)) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	private String normalizeSearchText(String value) {
+		return (value != null ? value : "")
+			.toLowerCase(Locale.ROOT)
+			.replace('_', ' ')
+			.replace('-', ' ');
+	}
+
 	/*
 	 * ---------------------------------------------------------
 	 * HTML scanner

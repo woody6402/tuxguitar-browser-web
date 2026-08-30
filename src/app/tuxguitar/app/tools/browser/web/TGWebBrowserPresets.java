@@ -19,7 +19,7 @@ public final class TGWebBrowserPresets {
 	private static final String CONFIG_NAME = "web-browser-presets.json";
 
 	public static final TGWebBrowserPreset CUSTOM = new TGWebBrowserPreset("Custom",
-			"Eigene Quelle mit frei wählbarer Startadresse, Navigation und optionalem Song-Link-Pattern.",
+			"Custom source with a freely selectable start address, navigation, and an optional song-link pattern.",
 			"", false, "");
 
 	private TGWebBrowserPresets() {
