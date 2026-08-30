@@ -73,19 +73,11 @@ the resulting songs still use the same virtual A-Z organization.
 
 ## Features
 
-- Browse TuxGuitar-supported song files directly from web pages
-- Search all song files detected on the current web page without opening the virtual A-Z folders
-- Automatic A–Z grouping with number of pieces
-- Optional navigation to HTML sub-pages
-- Sub-page navigation is disabled by default
-- Same-host and external sub-pages are separated into `Links` and `Links extern`
-- Same-host entries use `⌂`; external entries use `↗`
+- Detect Guitar Pro, Power Tab, TablEdit, MIDI, and other formats supported by TuxGuitar
 - HTML downloads are limited to 5 MiB
 - Scanning is limited to 10,000 links per page; partial results remain available
-- HTML is only parsed for links – no rendering or JavaScript execution
-- A-Z song groups optionally contain filename-prefix folders when at least two files share the text before the first underscore
 - Song files are opened using TuxGuitar's existing reader infrastructure
-- Presets are loaded from `config/plugins/web-browser-presets.json` each time the configuration dialog is opened
+- Presets can be changed without recompiling the plugin
 
 ## Usage
 
