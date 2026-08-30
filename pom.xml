@@ -18,6 +18,13 @@
 			<resource>
 				<directory>share</directory>
 			</resource>
+			<resource>
+				<directory>.</directory>
+				<includes>
+					<include>LICENSE</include>
+				</includes>
+				<targetPath>META-INF</targetPath>
+			</resource>
 		</resources>
 	</build>
 

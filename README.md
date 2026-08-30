@@ -133,3 +133,8 @@ The bundled presets are classified by the navigation model they use.
 
 Experimental implementation.  
 Website structures vary, so not every site may work correctly.
+
+## License
+
+This plugin is distributed under the [GNU Lesser General Public License,
+version 2.1](LICENSE), the same license as TuxGuitar.
